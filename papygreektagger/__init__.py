@@ -1,1 +1,1 @@
-from papygreektagger.tagger import model
+from .papygreektagger import tag

@@ -1,9 +1,15 @@
 from example import example_sentence
 
-from papygreektagger import tagger
+from papygreektagger import tag
 
 from pprint import pprint
 
-result = tagger.predict(example_sentence)
+result = tag(example_sentence)
 
 pprint(result)
+
+
+"""
+NOTE: If the model doesn't run, try changing the flair/nn/model.py load_state_dict to strict=False
+
+"""

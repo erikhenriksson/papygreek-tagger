@@ -1,4 +1,5 @@
 import os
+import sys
 from math import floor
 import unicodedata
 import regex as re
@@ -7,9 +8,9 @@ from flair.data import Sentence
 
 from .rules import word_classes
 
-os.chdir("papygreektagger/tagger")
+os.chdir(os.path.dirname(__file__))
 tagger = SequenceTagger.load("v4/best-model.pt")
-os.chdir("../../")
+os.chdir(sys.path[0])
 
 pad = lambda x, y, filler: x + [filler] * (len(y) - len(x))
 plain = lambda s: "".join([unicodedata.normalize("NFD", a)[0].lower() for a in s])
@@ -22,7 +23,7 @@ two_decimals = lambda x: round(floor(x * 100) / 100, 2)
 def preformat(sentence, version):
     return [
         numeral(x[f"{version}_num"])
-        or x[f"{version}_plain"].replace("_", "")
+        or (x[f"{version}_plain"] or "").replace("_", "")
         or punctuation(f"{version}_plain")
         for x in sentence
     ]
