@@ -41,10 +41,6 @@ def afterformat(prediction, confidence, token, token_plain):
     if token_plain in ",..·;;:·.":
         return "u--------", conf
 
-    # Numeral
-    if token_plain == "num":
-        return "m--------", conf
-
     # Tokens with diacritics
     if token == "ὧν":
         return "p-p---mg-", conf
@@ -126,6 +122,10 @@ def afterformat(prediction, confidence, token, token_plain):
         prediction[0] = "m"
     if prediction[6] == "c":
         prediction[6] = "m"
+
+    # Numeral
+    if token_plain == "num":
+        prediction[0] = "m"
 
     return "".join(prediction), confidence
 
