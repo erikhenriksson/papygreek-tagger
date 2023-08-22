@@ -15,7 +15,7 @@ os.chdir(sys.path[0])
 pad = lambda x, y, filler: x + [filler] * (len(y) - len(x))
 plain = lambda s: "".join([unicodedata.normalize("NFD", a)[0].lower() for a in s])
 numeral = lambda x: "num" if x else ""
-just_greek = lambda x: re.sub(r"\p{^Greek}", "", x)
+just_greek = lambda x: re.sub(r"\p{^Greek}", "", (x or ""))
 punctuation = lambda x: x if x in ",..·;;:·." else "αβγδεφηιξκλμ"
 two_decimals = lambda x: round(floor(x * 100) / 100, 2)
 
