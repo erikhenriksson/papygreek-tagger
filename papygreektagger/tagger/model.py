@@ -8,7 +8,9 @@ from flair.data import Sentence
 
 from .rules import word_classes
 
-sequencetagger = None
+os.chdir(os.path.dirname(__file__))
+tagger = SequenceTagger.load("v4/best-model.pt")
+os.chdir(sys.path[0])
 
 pad = lambda x, y, filler: x + [filler] * (len(y) - len(x))
 plain = lambda s: "".join([unicodedata.normalize("NFD", a)[0].lower() for a in s])
@@ -16,13 +18,6 @@ numeral = lambda x: "num" if x else ""
 just_greek = lambda x: re.sub(r"\p{^Greek}", "", (x or ""))
 punctuation = lambda x: x if x in ",..·;;:·." else "αβγδεφηιξκλμ"
 two_decimals = lambda x: round(floor(x * 100) / 100, 2)
-
-
-def load_model():
-    global sequencetagger
-    os.chdir(os.path.dirname(__file__))
-    sequencetagger = SequenceTagger.load("v4/best-model.pt")
-    os.chdir(sys.path[0])
 
 
 def preformat(sentence, version):
@@ -135,45 +130,38 @@ def afterformat(prediction, confidence, token, token_plain):
     return "".join(prediction), confidence
 
 
-def predict(sentence, reload_model=True):
-    if reload_model:
-        load_model()
-
-    reg_tokens = preformat(sentence, "reg")
-    orig_tokens = preformat(sentence, "orig")
-    reg_sentence = Sentence(" ".join(reg_tokens), use_tokenizer=False)
-    orig_sentence = Sentence(" ".join(orig_tokens), use_tokenizer=False)
-    sequencetagger.predict(reg_sentence)
-    sequencetagger.predict(orig_sentence)
-    reg_result = pad(
-        reg_sentence.to_dict()["all labels"],
-        reg_tokens,
-        {"value": "<unk>", "confidence": "0.99"},
-    )
-    orig_result = pad(
-        orig_sentence.to_dict()["all labels"],
-        orig_tokens,
-        {"value": "<unk>", "confidence": "0.99"},
-    )
-
-    for i, _ in enumerate(sentence):
-        token = sentence[i]
-        orig_pred = orig_result[i]
-        reg_pred = reg_result[i]
-        orig_value, orig_confidence = afterformat(
-            orig_pred["value"],
-            orig_pred["confidence"],
-            just_greek(token["orig_form"]),
-            orig_tokens[i],
+def predict(sentence):
+    for version in ["reg", "orig"]:
+        version_tokens = preformat(sentence, version)
+        version_sentence = Sentence(
+            " ".join(version_tokens),
+            use_tokenizer=False,
         )
-        reg_value, reg_confidence = afterformat(
-            reg_pred["value"],
-            reg_pred["confidence"],
-            just_greek(token["reg_form"]),
-            reg_tokens[i],
+        tagger.predict(version_sentence)
+
+        version_result = pad(
+            version_sentence.to_dict()["all labels"],
+            version_tokens,
+            {"value": "<unk>", "confidence": "0.99"},
         )
-        token["orig_postag"] = orig_value
-        token["orig_postag_confidence"] = two_decimals(orig_confidence)
-        token["reg_postag"] = reg_value
-        token["reg_postag_confidence"] = two_decimals(reg_confidence)
+
+        for i, _ in enumerate(sentence):
+            token = sentence[i]
+            version_pred = version_result[i]
+
+            version_value, version_confidence = afterformat(
+                version_pred["value"],
+                version_pred["confidence"],
+                just_greek(token[f"{version}_form"]),
+                version_tokens[i],
+            )
+
+            token[f"{version}_postag"] = version_value
+            token[f"{version}_postag_confidence"] = two_decimals(version_confidence)
+            token[f"{version}_postag"] = version_value
+            token[f"{version}_postag_confidence"] = two_decimals(version_confidence)
+
+            for flair_token in version_sentence:
+                flair_token.clear_embeddings()
+
     return sentence
