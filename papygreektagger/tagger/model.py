@@ -5,9 +5,6 @@ import unicodedata
 import regex as re
 from flair.models import SequenceTagger
 from flair.data import Sentence
-import torch
-
-torch.cuda.get_device_name(0)
 
 from .rules import word_classes
 
@@ -133,7 +130,12 @@ def afterformat(prediction, confidence, token, token_plain):
     return "".join(prediction), confidence
 
 
-def predict(sentence):
+def predict(sentence, reload_model=False):
+    if reload_model:
+        os.chdir(os.path.dirname(__file__))
+        tagger = SequenceTagger.load("v4/best-model.pt")
+        os.chdir(sys.path[0])
+
     reg_tokens = preformat(sentence, "reg")
     orig_tokens = preformat(sentence, "orig")
     reg_sentence = Sentence(" ".join(reg_tokens), use_tokenizer=False)
@@ -171,5 +173,4 @@ def predict(sentence):
         token["orig_postag_confidence"] = two_decimals(orig_confidence)
         token["reg_postag"] = reg_value
         token["reg_postag_confidence"] = two_decimals(reg_confidence)
-    torch.cuda.empty_cache()
     return sentence
