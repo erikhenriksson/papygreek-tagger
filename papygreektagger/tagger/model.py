@@ -34,7 +34,7 @@ def afterformat(prediction, confidence, token, token_plain):
     conf = 0.99
 
     # Unknown postag, revert to defaults (None, confidence 1)
-    if prediction in ["_", "<unk>"]:
+    if prediction in ["_", "<unk>", "0", ""]:
         return None, 1
 
     # Punct
@@ -120,7 +120,7 @@ def afterformat(prediction, confidence, token, token_plain):
         prediction[0] = "c"
     if prediction[0] == "i":
         prediction[0] = "m"
-    if prediction[6] == "c":
+    if len(prediction) > 6 and prediction[6] == "c":
         prediction[6] = "m"
 
     # Numeral
