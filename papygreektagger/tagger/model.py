@@ -5,6 +5,9 @@ import unicodedata
 import regex as re
 from flair.models import SequenceTagger
 from flair.data import Sentence
+import torch
+
+torch.cuda.get_device_name(0)
 
 from .rules import word_classes
 
@@ -168,5 +171,5 @@ def predict(sentence):
         token["orig_postag_confidence"] = two_decimals(orig_confidence)
         token["reg_postag"] = reg_value
         token["reg_postag_confidence"] = two_decimals(reg_confidence)
-
+    torch.cuda.empty_cache()
     return sentence
