@@ -8,9 +8,7 @@ from flair.data import Sentence
 
 from .rules import word_classes
 
-os.chdir(os.path.dirname(__file__))
-tagger = SequenceTagger.load("v4/best-model.pt")
-os.chdir(sys.path[0])
+sequencetagger = None
 
 pad = lambda x, y, filler: x + [filler] * (len(y) - len(x))
 plain = lambda s: "".join([unicodedata.normalize("NFD", a)[0].lower() for a in s])
@@ -18,6 +16,13 @@ numeral = lambda x: "num" if x else ""
 just_greek = lambda x: re.sub(r"\p{^Greek}", "", (x or ""))
 punctuation = lambda x: x if x in ",..·;;:·." else "αβγδεφηιξκλμ"
 two_decimals = lambda x: round(floor(x * 100) / 100, 2)
+
+
+def load_model():
+    global sequencetagger
+    os.chdir(os.path.dirname(__file__))
+    sequencetagger = SequenceTagger.load("v4/best-model.pt")
+    os.chdir(sys.path[0])
 
 
 def preformat(sentence, version):
@@ -130,18 +135,16 @@ def afterformat(prediction, confidence, token, token_plain):
     return "".join(prediction), confidence
 
 
-def predict(sentence, reload_model=False):
+def predict(sentence, reload_model=True):
     if reload_model:
-        os.chdir(os.path.dirname(__file__))
-        tagger = SequenceTagger.load("v4/best-model.pt")
-        os.chdir(sys.path[0])
+        load_model()
 
     reg_tokens = preformat(sentence, "reg")
     orig_tokens = preformat(sentence, "orig")
     reg_sentence = Sentence(" ".join(reg_tokens), use_tokenizer=False)
     orig_sentence = Sentence(" ".join(orig_tokens), use_tokenizer=False)
-    tagger.predict(reg_sentence)
-    tagger.predict(orig_sentence)
+    sequencetagger.predict(reg_sentence)
+    sequencetagger.predict(orig_sentence)
     reg_result = pad(
         reg_sentence.to_dict()["all labels"],
         reg_tokens,
